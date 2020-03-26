@@ -18,8 +18,8 @@ export default function Profile() {
     const currency = Intl.NumberFormat('pt-BR', { style: 'currency', currency:'BRL' })
 
     useEffect(() => {
-        api.get('profile', apiOptions).then(response =>  setIncidents(response.data))
-    }, [ongId, apiOptions])
+        api.get('profile', { headers: { Authorization: ongId } }).then(response =>  setIncidents(response.data))
+    }, [ongId])
 
     async function handleDeleteIncident(id){
         try{
