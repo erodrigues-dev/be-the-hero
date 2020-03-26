@@ -11,14 +11,16 @@ import api from '../../services/api'
 export default function Profile() {
     const [incidents, setIncidents] = useState([])
     const ongName = localStorage.getItem('ongName')
-    const ongId = localStorage.getItem('ongId')
+    const ongId = localStorage.getItem('ongId') || ''
 
     const history = useHistory()
     const apiOptions = { headers: { Authorization: ongId } }
     const currency = Intl.NumberFormat('pt-BR', { style: 'currency', currency:'BRL' })
 
     useEffect(() => {
-        api.get('profile', { headers: { Authorization: ongId } }).then(response =>  setIncidents(response.data))
+        api.get('profile', { headers: { Authorization: ongId } })
+            .then(response =>  setIncidents(response.data))
+            .catch(err => alert(err.response.data.error))
     }, [ongId])
 
     async function handleDeleteIncident(id){
@@ -48,7 +50,7 @@ export default function Profile() {
 
             <h1>Casos cadastrados</h1>
 
-            { incidents.length == 0 && <p>Você ainda não tem casos cadastrados.</p> }
+            { incidents.length === 0 && <p>Você ainda não tem casos cadastrados.</p> }
 
             <ul>
                 {incidents.map(incident => (

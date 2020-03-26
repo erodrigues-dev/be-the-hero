@@ -14,16 +14,18 @@ export default function NewIncident() {
     const [value, setValue] = useState('')
 
     const history = useHistory()
-    const ongId = localStorage.getItem('ongId')
+    const ongId = localStorage.getItem('ongId') || ''
 
-    async function handleNewIncident(e){
+    async function handleNewIncident(e) {
         e.preventDefault()
 
-        const data = { title, description, value }
-
-        await api.post('incidents', data, {headers: {Authorization: ongId }})
-
-        history.push('/profile')
+        try {
+            const data = { title, description, value }
+            await api.post('incidents', data, { headers: { Authorization: ongId } })
+            history.push('/profile')
+        } catch (error) {
+            alert(error.response.data.error)
+        }
     }
 
     return (
@@ -41,23 +43,23 @@ export default function NewIncident() {
                 </section>
 
                 <form onSubmit={handleNewIncident}>
-                    <input 
+                    <input
                         placeholder="título do caso"
                         value={title}
-                        onChange={e => setTitle(e.target.value)} 
+                        onChange={e => setTitle(e.target.value)}
                         required />
 
-                    <textarea 
+                    <textarea
                         placeholder="Descrição"
                         value={description}
-                        onChange={e => setDescription(e.target.value)} 
+                        onChange={e => setDescription(e.target.value)}
                         required />
 
-                    <input 
-                        type="number" 
+                    <input
+                        type="number"
                         placeholder="Valor em reais"
                         value={value}
-                        onChange={e => setValue(e.target.value)} 
+                        onChange={e => setValue(e.target.value)}
                         required />
 
                     <button type="submit" className="button">Cadastrar</button>
