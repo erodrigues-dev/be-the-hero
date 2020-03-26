@@ -14,16 +14,16 @@ export default function Profile() {
     const ongId = localStorage.getItem('ongId')
 
     const history = useHistory()
+    const apiOptions = { headers: { Authorization: ongId } }
+    const currency = Intl.NumberFormat('pt-BR', { style: 'currency', currency:'BRL' })
 
     useEffect(() => {
-        api.get('profile', { headers: { Authorization: ongId } }).then(response => 
-            setIncidents(response.data)
-        )
-    }, [ongId])
+        api.get('profile', apiOptions).then(response =>  setIncidents(response.data))
+    }, [ongId, apiOptions])
 
     async function handleDeleteIncident(id){
         try{
-            await api.delete(`incidents/${id}`, {headers:{Authorization:ongId}})
+            await api.delete(`incidents/${id}`, apiOptions)
             setIncidents(incidents.filter(x=> x.id !== id))
         } catch{
             alert('Erro ao deletar caso, tente novamete')
@@ -47,6 +47,9 @@ export default function Profile() {
             </header>
 
             <h1>Casos cadastrados</h1>
+
+            { incidents.length == 0 && <p>Você ainda não tem casos cadastrados.</p> }
+
             <ul>
                 {incidents.map(incident => (
                     <li key={incident.id}>
@@ -57,7 +60,7 @@ export default function Profile() {
                         <p>{incident.description}</p>
 
                         <strong>VALOR:</strong>
-                        <p>{Intl.NumberFormat('pt-BR', { style: 'currency', currency:'BRL' }).format(incident.value)}</p>
+                        <p>{currency.format(incident.value)}</p>
 
                         <button onClick={()=> handleDeleteIncident(incident.id)}>
                             <FiTrash2 size={20} color="#a8a8b3" />
