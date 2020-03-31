@@ -1,50 +1,57 @@
 const request = require('supertest')
 const app = require('../../src/app')
 const connection = require('../../src/database/connection')
+const factory = require('../factories')
+const truncate = require('../utils/truncate')
 
 describe('Incident', () => {
 
     function createONG() {
         return request(app)
             .post('/ongs')
-            .send({
-                name: "APAD-10",
-                email: "apad@mail.com",
-                whatsapp: "21912341234",
-                city: "Rio de Janeiro",
-                uf: "RJ"
-            })
+            .send(factory.createONG())
     }
 
-    function createIncident(ongId){
+    function createIncident(ongId) {
         return request(app)
             .post('/incidents')
             .set('authorization', ongId)
-            .send({
-                "title": "titulo do caso",
-                "description": "Detalhes do caso",
-                "value": 200
-        })
+            .send(factory.createIncident())
     }
 
     beforeEach(async () => {
-        await connection.migrate.rollback()
+        await truncate()
+    })
+    
+    beforeAll(async()=> {
         await connection.migrate.latest()
     })
-
-    afterAll(async () => await connection.destroy())
+    
+    afterAll(async () => {
+        await connection.migrate.rollback()
+        await connection.destroy()
+    })
 
     it('should be able create incident', async () => {
-        const {id:ongId} = (await createONG()).body
-        const response = await createIncident(ongId)
+
+        const responseCreateOng = await createONG()
+        const response = await createIncident(responseCreateOng.body.id)
 
         expect(response.body).toHaveProperty('id')
         expect(response.body.id).not.toBeNaN()
     })
 
-    it('shold be able list incidents', async () => {
-        const {id:ongId} = (await createONG()).body
-        const {id:incidentId} = (await createIncident(ongId)).body
+    it('should not be able create incident without ong_id', async () => {
+
+        const incident = factory.createIncident()
+        const response = await request(app).post('/incidents').send(incident)
+
+        expect(response.status).toBe(400)
+    })
+
+    it('should be able list incidents', async () => {
+        const { id: ongId } = (await createONG()).body
+        const { id: incidentId } = (await createIncident(ongId)).body
 
         const response = await request(app).get('/incidents')
 
@@ -65,9 +72,9 @@ describe('Incident', () => {
     })
 
     it('should be able paginate incidents', async () => {
-        const {id:ongId} = (await createONG()).body
+        const { id: ongId } = (await createONG()).body
 
-        for(let i = 0; i < 6; i++)
+        for (let i = 0; i < 6; i++)
             await createIncident(ongId)
 
         const page1 = await request(app).get('/incidents')
@@ -75,5 +82,28 @@ describe('Incident', () => {
 
         expect(page1.body).toHaveLength(5)
         expect(page2.body).toHaveLength(1)
+    })
+
+    it('should be able delete incident', async () => {
+        const responseONG = await createONG()
+        const responseIncident = await createIncident(responseONG.body.id)
+
+        const response = await request(app)
+            .delete(`/incidents/${responseIncident.body.id}`)
+            .set('authorization', responseONG.body.id)
+
+        expect(response.status).toBe(204)
+    })
+
+    it('should not be able delete incident from another ONG', async()=>{
+        const responseONG = await createONG()
+        const responseONG2 = await createONG()
+        const responseIncident = await createIncident(responseONG.body.id)
+
+        const response = await request(app)
+            .delete(`/incidents/${responseIncident.body.id}`)
+            .set('authorization', responseONG2.body.id)
+
+        expect(response.status).toBe(401)
     })
 })

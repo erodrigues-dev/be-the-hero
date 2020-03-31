@@ -11,7 +11,6 @@ module.exports = {
         if(!ong)
             return res.status(400).json({error: 'Ong not found'})
 
-
         return res.json(ong)
     }
 }
